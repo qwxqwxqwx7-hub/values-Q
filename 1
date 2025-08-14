@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schwartz Value Theory Questionnaire</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; margin: 2em; }
+        .question-group { margin-bottom: 1.5em; }
+        .id-group {
+    display: flex;
+    align-items: center; /* This vertically aligns the label and input field */
+    gap: 1em; /* This adds space between the label and the input field */
+}
+        .options { display: flex; justify-content: space-between; max-width: 600px; }
+        .options label { display: block; text-align: center; }
+        #calculateBtn { font-size: 1.2em; padding: 10px 20px; margin-top: 2em; cursor: pointer; }
+        #results { margin-top: 2em; border-top: 2px solid #000; padding-top: 1em; }
+        .value-card { border: 1px solid #ccc; border-radius: 8px; padding: 1em; margin-bottom: 1em; }
+        .value-card h3 { margin-top: 0; }
+        .value-card .score { font-weight: bold; }
+        h1, h2, h3 { color: #333; }
+        .z-score-explanation { font-style: italic; color: #555; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Questionnaire</h1>
+    <p>Here we briefly describe different people.  Please read each description and think about how much that person is or is not like you. Tick the box that shows how much the person described is like you.
+</p>
+
+    <form id="pvqForm">
+        <div class="id-group">
+    <label for="respondentId"><b>ID:</b></label>
+    <input type="text" id="respondentId" name="respondentId" required>
+</div>
+        <hr>
+        <div id="questionsContainer"></div>
+        <button type="button" id="calculateBtn">Calculate Scores</button>
+    </form>
+
+    <div id="results" style="display:none;">
+        <h2>Your Results</h2>
+        
+        <h3>Scores for the 10 Original Values</h3>
+        <div id="results-10-values"></div>
+
+        <h3>Scores for the 19 Refined Values</h3>
+        <div id="results-19-values"></div>
+        
+        <h2>Leadership Advice</h2>
+        <p>Please keep in mind that:</p>
+<ol>
+  <li>Values are beliefs about the importance of desirable goals.</li>
+  <li>When activated, values elicit emotion.</li>
+  <li>Values are basic goals that apply across specific situations.</li>
+  <li>Values consciously or unconsciously motivate behavior, perception, and attitudes.</li>
+  <li>Value effects occur through a process of trade-offs among the relevant values.</li>
+  <li>Values serve as standards for evaluating actions, people, and events.</li>
+  <li>Values are ordered by importance in a relatively enduring hierarchical system.</li>
+</ol>
+<p>Based on the top 5 highest scoring values, here are some suggestions for you as the leader on how to best motivate and lead this person:</p>
+        <div id="management-advice"></div>
+    </div>
+
+<script>
+    const questions = [
+        "It is important to him to form his views independently.", // 1
+        "It is important to him that his country is secure and stable.", // 2
+        "It is important to him to have a good time.", // 3
+        "It is important to him to avoid upsetting other people.", // 4
+        "It is important to him that the weak and vulnerable in society be protected.", // 5
+        "It is important to him that people do what he says they should.", // 6
+        "It is important to him never to think he deserves more than other people.", // 7
+        "It is important to him to care for nature.", // 8
+        "It is important to him that no one should ever shame him.", // 9
+        "It is important to him always to look for different things to do.", // 10
+        "It is important to him to take care of people he is close to.", // 11
+        "It is important to him to have the power that money can bring.", // 12
+        "It is very important to him to avoid disease and protect his health.", // 13
+        "It is important to him to be tolerant toward all kinds of people and groups.", // 14
+        "It is important to him never to violate rules or regulations.", // 15
+        "It is important to him to make his own decisions about his life.", // 16
+        "It is important to him to have ambitions in life.", // 17
+        "It is important to him to maintain traditional values and ways of thinking.", // 18
+        "It is important to him that people he knows have full confidence in him.", // 19
+        "It is important to him to be wealthy.", // 20
+        "It is important to him to take part in activities to defend nature.", // 21
+        "It is important to him never to annoy anyone.", // 22
+        "It is important to him to develop his own opinions.", // 23
+        "It is important to him to protect his public image.", // 24
+        "It is very important to him to help the people dear to him.", // 25
+        "It is important to him to be personally safe and secure.", // 26
+        "It is important to him to be a dependable and trustworthy friend.", // 27
+        "It is important to him to have an exciting life.", // 28
+        "It is important to him to have the power to make people do what he wants.", // 29
+        "It is important to him to plan his activities independently.", // 30
+        "It is important to him to follow rules even when no-one is watching.", // 31
+        "It is important to him to be very successful.", // 32
+        "It is important to him to follow his family’s customs or the customs of a religion.", // 33
+        "It is important to him to listen to and understand people who are different from him.", // 34
+        "It is important to him to have a strong state that can defend its citizens.", // 35
+        "It is important to him to enjoy life’s pleasures.", // 36
+        "It is important to him that every person in the world have equal opportunities in life.", // 37
+        "It is important to him to be humble.", // 38
+        "It is important to him to figure things out himself.", // 39
+        "It is important to him to honor the traditional practices of his culture.", // 40
+        "It is important to him to be the one who tells others what to do.", // 41
+        "It is important to him to obey all the laws.", // 42
+        "It is important to him to have all sorts of new experiences.", // 43
+        "It is important to him to own expensive things that show his wealth.", // 44
+        "It is important to him to protect the natural environment from destruction or pollution.", // 45
+        "It is important to him to take advantage of every opportunity to have fun.", // 46
+        "It is important to him to concern himself with every need of his dear ones.", // 47
+        "It is important to him that people recognize what he achieves.", // 48
+        "It is important to him never to be humiliated.", // 49
+        "It is important to him that his country protect itself against all threats.", // 50
+        "It is important to him never to make other people angry.", // 51
+        "It is important to him that everyone be treated justly, even people he doesn’t know.", // 52
+        "It is important to him to avoid anything dangerous.", // 53
+        "It is important to him to be satisfied with what he has and not ask for more.", // 54
+        "It is important to him that all his friends and family can rely on him completely.", // 55
+        "It is important to him to be free to choose what he does by himself.", // 56
+        "It is important to him to accept people even when he disagrees with them." // 57
+    ];
+
+    const container = document.getElementById('questionsContainer');
+    const options = [
+        { text: "Not like me at all", value: 1 },
+        { text: "Not like me", value: 2 },
+        { text: "A little like me", value: 3 },
+        { text: "Moderately like me", value: 4 },
+        { text: "Like me", value: 5 },
+        { text: "Very much like me", value: 6 }
+    ];
+
+    questions.forEach((q, index) => {
+        const qNum = index + 1;
+        const group = document.createElement('div');
+        group.className = 'question-group';
+
+        const text = document.createElement('span');
+        text.className = 'question-text';
+        text.textContent = `${qNum}. ${q}`;
+        group.appendChild(text);
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'options';
+
+        options.forEach(opt => {
+            const label = document.createElement('label');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = `q${qNum}`;
+            radio.value = opt.value;
+            radio.required = true;
+            
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(opt.text));
+            optionsDiv.appendChild(label);
+        });
+        group.appendChild(optionsDiv);
+        container.appendChild(group);
+    });
+
+    const norms = {
+        1: { "mean": 5.17, "sd": 0.88 }, 2: { "mean": 4.93, "sd": 0.99 }, 3: { "mean": 4.79, "sd": 1.14 },
+        4: { "mean": 4.55, "sd": 1.07 }, 5: { "mean": 5.25, "sd": 0.81 }, 6: { "mean": 3.49, "sd": 1.34 },
+        7: { "mean": 4.27, "sd": 1.46 }, 8: { "mean": 5.05, "sd": 0.96 }, 9: { "mean": 4.14, "sd": 1.33 },
+        10: { "mean": 4.25, "sd": 1.15 }, 11: { "mean": 5.65, "sd": 0.62 }, 12: { "mean": 3.01, "sd": 1.46 },
+        13: { "mean": 5.4, "sd": 0.8 }, 14: { "mean": 5.58, "sd": 0.68 }, 15: { "mean": 4.5, "sd": 1.25 },
+        16: { "mean": 5.23, "sd": 0.83 }, 17: { "mean": 5.35, "sd": 0.77 }, 18: { "mean": 4.41, "sd": 1.25 },
+        19: { "mean": 5.12, "sd": 0.85 }, 20: { "mean": 3.32, "sd": 1.42 }, 21: { "mean": 3.89, "sd": 1.25 },
+        22: { "mean": 4.56, "sd": 1.06 }, 23: { "mean": 5.2, "sd": 0.8 }, 24: { "mean": 3.8, "sd": 1.24 },
+        25: { "mean": 5.59, "sd": 0.66 }, 26: { "mean": 5.21, "sd": 0.87 }, 27: { "mean": 5.64, "sd": 0.59 },
+        28: { "mean": 4.49, "sd": 1.12 }, 29: { "mean": 3.05, "sd": 1.39 }, 30: { "mean": 5.15, "sd": 0.88 },
+        31: { "mean": 4.96, "sd": 1.04 }, 32: { "mean": 4.43, "sd": 1.14 }, 33: { "mean": 3.79, "sd": 1.43 },
+        34: { "mean": 5.49, "sd": 0.65 }, 35: { "mean": 4.79, "sd": 1.05 }, 36: { "mean": 5.02, "sd": 0.96 },
+        37: { "mean": 5.32, "sd": 0.86 }, 38: { "mean": 4.5, "sd": 1.15 }, 39: { "mean": 4.98, "sd": 0.92 },
+        40: { "mean": 4.09, "sd": 1.35 }, 41: { "mean": 3.23, "sd": 1.34 }, 42: { "mean": 5.01, "sd": 1.06 },
+        43: { "mean": 3.97, "sd": 1.26 }, 44: { "mean": 2.76, "sd": 1.28 }, 45: { "mean": 4.68, "sd": 1.1 },
+        46: { "mean": 4.39, "sd": 1.15 }, 47: { "mean": 4.22, "sd": 1.21 }, 48: { "mean": 3.43, "sd": 1.16 },
+        49: { "mean": 4.07, "sd": 1.4 }, 50: { "mean": 5.18, "sd": 0.86 }, 51: { "mean": 4.33, "sd": 1.18 },
+        52: { "mean": 5.47, "sd": 0.72 }, 53: { "mean": 4.7, "sd": 1.1 }, 54: { "mean": 4.29, "sd": 1.21 },
+        55: { "mean": 4.93, "sd": 1.08 }, 56: { "mean": 5.25, "sd": 0.8 }, 57: { "mean": 5.08, "sd": 0.85 }
+    };
+
+    const scoring = {
+        "19_values": {
+            "Self-direction Thought": [1, 23, 39],
+            "Self-direction Action": [16, 30, 56],
+            "Stimulation": [10, 28, 43],
+            "Hedonism": [3, 36, 46],
+            "Achievement": [17, 32, 48],
+            "Power Dominance": [6, 29, 41],
+            "Power Resources": [12, 20, 44],
+            "Face": [9, 24, 49],
+            "Security Personal": [13, 26, 53],
+            "Security Societal": [2, 35, 50],
+            "Conformity-Rules": [15, 31, 42],
+            "Conformity-Interpersonal": [4, 22, 51],
+            "Humility": [7, 38, 54],
+            "Tradition": [18, 33, 40],
+            "Universalism-Nature": [8, 21, 45],
+            "Universalism-Concern": [5, 37, 52],
+            "Universalism-Tolerance": [14, 34, 57],
+            "Benevolence–Care": [11, 25, 47],
+            "Benevolence-Dependability": [19, 27, 55]
+        },
+        "10_values": {
+            "Self-Direction": [1, 23, 39, 16, 30, 56],
+            "Stimulation": [10, 28, 43],
+            "Hedonism": [3, 36, 46],
+            "Achievement": [17, 32, 48],
+            "Power": [6, 29, 41, 12, 20, 44],
+            "Security": [13, 26, 53, 2, 35, 50],
+            "Conformity": [15, 31, 42, 4, 22, 51],
+            "Tradition": [18, 33, 40, 7, 38, 54],
+            "Benevolence": [11, 25, 47, 19, 27, 55],
+            "Universalism": [8, 21, 45, 5, 37, 52, 14, 34, 57]
+        }
+    };
+    
+    const definitions = {
+        "Self-Direction": "Defining goal: independent thought and action - choosing, creating, exploring.",
+        "Stimulation": "Defining goal: excitement, novelty, and challenge in life.",
+        "Hedonism": "Defining goal: pleasure or sensuous gratification for oneself.",
+        "Achievement": "Defining goal: personal success through demonstrating competence according to social standards.",
+        "Power": "Defining goal: social status and prestige, control or dominance over people and resources.",
+        "Security": "Defining goal: safety, harmony, and stability of society, of relationships, and of self.",
+        "Conformity": "Defining goal: restraint of actions, inclinations, and impulses likely to upset or harm others and violate social expectations or norms.",
+        "Tradition": "Defining goal: respect, commitment, and acceptance of the customs and ideas that one's culture or religion provides.",
+        "Benevolence": "Defining goal: preserving and enhancing the welfare of those with whom one is in frequent personal contact (the 'in-group').",
+        "Universalism": "Defining goal: understanding, appreciation, tolerance, and protection for the welfare of all people and for nature."
+    };
+    
+    const definitions19 = {
+        "Self-direction Thought": "Focused on the freedom to independently form and cultivate one's own ideas and opinions.",
+        "Self-direction Action": "Focused on the freedom to determine one's own goals and act independently.",
+        "Stimulation": "Seeks excitement, novelty, and challenges in life to maintain an optimal level of activation.",
+        "Hedonism": "Focus on experiencing pleasure and sensory gratification.",
+        "Achievement": "Driven by the desire for personal success through demonstrating competence recognized by society.",
+        "Power Dominance": "Focus on exercising control and authority over other people.",
+        "Power Resources": "Focus on gaining control over material and social resources, such as wealth.",
+        "Face": "Focused on protecting one's own public image and avoiding humiliation.",
+        "Security Personal": "Focused on safety in the immediate environment, such as personal health and safety.",
+        "Security Societal": "Focused on the safety and stability of the wider society, such as national security.",
+        "Conformity-Rules": "Emphasis on obeying laws, rules, and formal obligations.",
+        "Conformity-Interpersonal": "Emphasis on avoiding upsetting or harming people with whom one interacts.",
+        "Humility": "Focused on recognizing one's own insignificance in the grand scheme of things; being modest.",
+        "Tradition": "Focused on respecting and maintaining cultural, family, or religious traditions.",
+        "Universalism-Nature": "Focused on appreciating and protecting the natural environment.",
+        "Universalism-Concern": "Focused on caring for the welfare of all people, by striving for justice and protection for everyone.",
+        "Universalism-Tolerance": "Focused on accepting and understanding people who are different from oneself.",
+        "Benevolence–Care": "Focus on caring for the well-being of the members of one's own group (family, friends).",
+        "Benevolence-Dependability": "Focus on being a reliable and loyal member of one's own group."
+    };
+    
+    const managementAdviceMap = {
+        "Self-direction Thought": "An employee who scores high on 'Self-direction Thought' highly values the freedom to form their own opinions and ideas. As a manager, it is crucial not to micromanage this person, but to provide intellectual space for independent analysis and reflection. Involve them in brainstorming sessions and specifically ask for their unique perspective on complex problems, as they will thrive in this. Avoid imposing rigid thought patterns or presenting decisions as unchangeable facts without sharing the underlying reasoning. By respecting and stimulating their intellectual autonomy, you will not only increase their motivation but also benefit from innovative and well-thought-out insights.",
+        "Self-direction Action": "This employee is driven by the freedom to act independently and make their own decisions about how to approach their work. Your role as a manager is to outline clear frameworks and end goals, but then trust that the employee can determine the best path to the result themselves. Delegate responsibilities rather than just tasks, and be open to methods and processes that deviate from the standard, as long as the goal is achieved. Too much control or detailed instructions will be perceived as demotivating and restrictive, which can undermine their proactivity. Give this employee control over their own projects and you will see a highly engaged and responsible professional emerge who shows ownership.",
+        "Stimulation": "A high score on 'Stimulation' indicates an employee who gets energy from excitement, novelty, and variety in their tasks. As a manager, you can best motivate this person by involving them in dynamic projects, innovative pilots, or tasks that require a fresh perspective. Routine, repetitive work will quickly lead to boredom and a drop in productivity. Regularly offer new challenges and provide opportunities to learn new skills or work on different projects. By creating a stimulating and varied work environment, you will keep this employee sharp, engaged, and enthusiastic about their contribution.",
+        "Hedonism": "This person values pleasure, enjoyment, and an overall pleasant feeling, also in the workplace. As a manager, you can respond to this by ensuring a positive and pleasant work atmosphere where successes are celebrated. Think about organizing informal team activities, acknowledging the importance of a good work-life balance, and creating a comfortable physical workspace. This is not about avoiding work, but about the conviction that work and pleasure can go hand in hand, which benefits overall satisfaction and creativity. By paying attention to the atmosphere and well-being, you ensure that this employee performs their tasks with more energy and a more positive attitude.",
+        "Achievement": "This employee is highly motivated by achieving personal success and demonstrating competence. As a manager, it is essential to set clear and challenging, yet achievable goals, so that performance is measurable. Provide regular constructive feedback and, more importantly, explicit recognition for successes achieved and skills demonstrated. Offer plenty of opportunities for professional development and training to further sharpen their competencies. By recognizing and nurturing their drive for achievement, you create a loyal and hardworking employee who strives for excellence.",
+        "Power Dominance": "A high score on 'Power Dominance' indicates a desire to exert influence and control over people and processes. As a manager, you can channel this drive positively by giving them responsibility and (informal) leadership within projects. Involve this employee in decision-making processes and give them the opportunity to guide or coordinate others. It is important to steer this towards constructive leadership rather than pure dominance, by focusing on achieving team goals. Give them the authority to make decisions within a defined domain; this way you utilize their natural drive for influence for the benefit of the organization.",
+        "Power Resources": "This employee is motivated by gaining control over material and social resources, such as budgets, technology, or status. As a manager, you can motivate them by giving them responsibility over important resources and rewarding their performance with tangible incentives. This could include bonuses, a company car, or the latest technological tools that enhance their status and effectiveness. Make the link between their performance and access to more resources very clear. By giving them control over resources that are essential for the team's success, they will feel valued and powerful.",
+        "Face": "For this employee, protecting their public image and avoiding shame or humiliation is of the utmost importance. Therefore, always give compliments and recognition for their work in public, for example, during a team meeting. On the other hand, deliver criticism or constructive feedback always in a one-on-one conversation, in a discreet and respectful manner. Be aware that public criticism can deeply affect them and seriously damage their motivation. By protecting their reputation and treating them with respect, you build a relationship of trust and they will feel safe to take risks.",
+        "Security Personal": "This employee highly values a safe, stable, and predictable work environment. As a manager, you can respond to this by ensuring clear communication, clear expectations, and transparency about the company's future. Avoid sudden, unexpected changes, and if they are unavoidable, communicate timely and clearly about the reasons and the process. Job security and a focus on health and safety in the workplace are crucial for them. A structured approach with clear procedures and routines will give them a sense of control and peace, allowing them to perform optimally.",
+        "Security Societal": "For this person, not only personal but also societal stability and security are important. They thrive in an organization that exudes order, stability, and a clear structure. As a manager, emphasize the solidity of the company and how the organization contributes to a stable society. Communicate about the long-term vision and the measures being taken to ensure continuity. This employee will be committed to a safe and orderly work environment and to adhering to company rules; show that the organization is a reliable factor.",
+        "Conformity-Rules": "This employee finds it important to comply with rules, laws, and formal obligations. As a manager, ensure a clear and accessible overview of all relevant procedures, protocols, and guidelines. Be a model of correctness yourself and be consistent in enforcing these rules for everyone. This person functions best in a structured environment where the rules are clear and the same for everyone. Appreciate their thoroughness and reliability in following procedures, as this contributes to the quality and predictability of the work.",
+        "Conformity-Interpersonal": "This employee is strongly motivated to not upset or harm others and highly values a harmonious atmosphere. As a manager, you should foster a team culture based on respect, politeness, and cooperation. Encourage open, but always respectful communication and act against behavior that disrupts harmony. This person will strive to avoid conflicts and keep the peace. Acknowledge their contribution to a positive team atmosphere and emphasize the importance of good interpersonal relationships for the success of the entire team.",
+        "Humility": "A high score on 'Humility' means that the employee is modest and does not put themselves in the foreground. As a manager, approach this person in an equal and respectful manner, without coming across as authoritarian. They appreciate leaders who also acknowledge their own limitations and are open to the input of others. Give feedback in a gentle, constructive way and avoid putting them in the spotlight unnecessarily, which they might find uncomfortable. Acknowledge their contribution in a subtle way; they do not need grand public praise but appreciate sincere, personal recognition.",
+        "Tradition": "This employee values respecting and maintaining cultural, family, or organizational traditions. If you want to implement changes, it is crucial to connect them with the existing values and the history of the company. Show respect for 'how we've always done things here,' even if you want to bring innovation. Involve this person in safeguarding the company culture and acknowledge the value of traditions for the team's identity. Celebrate anniversaries and other milestones, as this strengthens their sense of belonging and loyalty.",
+        "Universalism-Nature": "This employee feels a strong connection to nature and finds environmental protection important. You can motivate them by making the organization's sustainability efforts visible and emphasizing them. Involve them in corporate social responsibility (CSR) initiatives, such as projects to reduce waste or save energy. Show how their daily work, directly or indirectly, contributes to a better world and a healthier environment. Provide space for green initiatives in the workplace, as this will significantly increase their engagement and pride in the organization.",
+        "Universalism-Concern": "Driven by a deep sense of justice, this employee is committed to the well-being of all people. As a manager, emphasize the societal impact and the positive contribution of the organization's work. Ensure an internal policy that demonstrates fairness and equality, with transparent processes for promotions and rewards. This person is sensitive to injustice and will stand up for the weaker ones in society and in the workplace. Involve them in discussions about ethics and social responsibility to strengthen their sense of purpose in their work.",
+        "Universalism-Tolerance": "This employee values and accepts people who are different and has a tolerant attitude towards different opinions and backgrounds. As a manager, you must create an inclusive work culture where diversity is celebrated as a strength. Encourage the input of different perspectives and ensure that everyone feels heard and respected. This person will be an ambassador for an open and tolerant work environment. Use them as a mentor for new colleagues with diverse backgrounds to utilize their natural talent for understanding and acceptance.",
+        "Benevolence–Care": "The well-being of those close to them, such as family, friends, and direct colleagues, is central to this employee. As a manager, create a close-knit and supportive team environment where colleagues look out for each other. Show genuine, personal interest in the employee's well-being, both inside and outside of work. This person will thrive in a role where they can care for others and will be a key figure in creating a positive, caring atmosphere. Encourage teamwork and mutual help, as this aligns perfectly with their deepest motivation.",
+        "Benevolence-Dependability": "This employee is driven by the desire to be a reliable and loyal member of the group. Give them your trust by assigning important and responsible tasks and explicitly express your appreciation for their reliability. Emphasize how their commitment and loyalty are essential for the success and stability of the entire team. This person will do everything to keep their promises and not let colleagues down. Build on their strong sense of duty by giving them a key role in processes where consistency and reliability are crucial."
+    };
+
+
+    document.getElementById('calculateBtn').addEventListener('click', () => {
+        const form = document.getElementById('pvqForm');
+        if (!form.checkValidity()) {
+            alert("Please respond to all the questions and fill in your ID.");
+            return;
+        }
+
+        const formData = new FormData(form);
+        const answers = {};
+        for (let [key, value] of formData.entries()) {
+            // Don't parse the ID as an integer
+            if (key.startsWith('q')) {
+                answers[key] = parseInt(value, 10);
+            } else {
+                answers[key] = value;
+            }
+        }
+
+        // Calculate scores
+        const scores = { "19_values": {}, "10_values": {} };
+        const valueZScores = {};
+
+        for (const type in scoring) {
+            for (const valueName in scoring[type]) {
+                const items = scoring[type][valueName];
+                const sum = items.reduce((acc, itemNum) => acc + answers[`q${itemNum}`], 0);
+                scores[type][valueName] = (sum / items.length).toFixed(2);
+            }
+        }
+        
+        // Calculate Z-Scores for 19 values
+        for (const valueName in scoring["19_values"]) {
+            const items = scoring["19_values"][valueName];
+            let z_sum = 0;
+            items.forEach(itemNum => {
+                const respondentScore = answers[`q${itemNum}`];
+                const normMean = norms[itemNum].mean;
+                const normSd = norms[itemNum].sd;
+                z_sum += (respondentScore - normMean) / normSd;
+            });
+            valueZScores[valueName] = (z_sum / items.length).toFixed(2);
+        }
+
+        // Display 10 values results
+        const results10Container = document.getElementById('results-10-values');
+        results10Container.innerHTML = '';
+        for(const valueName in scores["10_values"]){
+             const card = document.createElement('div');
+             card.className = 'value-card';
+             card.innerHTML = `
+                  <h3>${valueName}</h3>
+<p><em>${definitions[valueName] || ''}</em></p>
+                  <p><strong>Score:</strong> ${scores["10_values"][valueName]}</p>
+                  
+             `;
+             results10Container.appendChild(card);
+        }
+        
+        // Display 19 values results
+        const results19Container = document.getElementById('results-19-values');
+        results19Container.innerHTML = '';
+        let sorted19Scores = [];
+        for(const valueName in scores["19_values"]){
+            sorted19Scores.push({ name: valueName, score: scores["19_values"][valueName] });
+            const card = document.createElement('div');
+            card.className = 'value-card';
+            
+            const zScore = valueZScores[valueName];
+            let zScoreInterpretation = '';
+            if (zScore > 1) {
+                zScoreInterpretation = 'This score is significantly higher than the average of the norm group, indicating this value is much more important to you than for most people.';
+            } else if (zScore < -1) {
+                zScoreInterpretation = 'This score is significantly lower than the average of the norm group, indicating this value is much less important to you than for most people.';
+            } else {
+                zScoreInterpretation = 'This score is similar to the average of the norm group, indicating this value has about the same level of importance to you as for most people.';
+            }
+
+            card.innerHTML = `
+                  <h3>${valueName}</h3>
+<p><em>${definitions19[valueName] || ''}</em></p>
+                  <p><strong>Score:</strong> ${scores["19_values"][valueName]}</p>
+                  <p><strong>Z-Score:</strong> ${zScore}</p>
+                  <p class="z-score-explanation">${zScoreInterpretation}</p>
+                  
+            `;
+            results19Container.appendChild(card);
+        }
+
+        // Sort 19 values by score for management advice
+        sorted19Scores.sort((a, b) => b.score - a.score);
+
+        // Display management advice for TOP 5
+        const adviceContainer = document.getElementById('management-advice');
+        adviceContainer.innerHTML = '';
+        const top5Values = sorted19Scores.slice(0, 5); // <-- ADJUSTMENT HERE
+        top5Values.forEach(value => {
+            const card = document.createElement('div');
+            card.className = 'value-card';
+            card.innerHTML = `
+                  <h3>Advice for Value: ${value.name} (Score: ${value.score})</h3>
+                  <p>${managementAdviceMap[value.name]}</p>
+            `;
+            adviceContainer.appendChild(card);
+        });
+
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    });
+</script>
+
+</body>
+</html>
